@@ -1,0 +1,43 @@
+{
+    { sin, "sin" },
+    { cos, "cos" },
+    #define F(expr, name) \
+      { [](double x) { return expr; }, name }
+    F(tan(x - 1.), "tan1"),
+    F(exp(x) - 1000., "expm"),
+    F(20. / (x*x) - 0.1, "rep"),
+    F(pow(3., x) - x*x*x, "W3"),
+    F(exp(sin(0.1*x)) - exp(cos(sqrt(2.)*x)), "cexp"),
+    F(log((x + 100.) / x) - 1 / sqrt(x), "logr"),
+    F(log(sin(x) / x) / tan(x - 2.5)*cos(x), "f1"),
+    F(10. / cbrt(x) - 1 / (1. + log(x + 1.)) + 100. / sqrt(x), "f2"),
+    F(atan(log(abs(tan(x) - exp(x)))) - 0.5, "f3"),
+    F(atan(log(abs(tan(x + 0.5)*tan(sqrt(2.)*x + 0.3)))) - 1.4, "f4"),
+    F(tanh(-sin(1. / cosh(x - 100.)*sin(sinh(x - 100.)))) + 0.15, "chirp"),
+    F(exp(-1. / pow(x - 100123., 8)) - 0.7, "b100k"),
+    F(log(x) / exp(1. / x) + 0.09726, "touch"),
+    F(0.1 + cbrt(x) - pow(x, 1./5.) - pow(x, 1./7.), "357"),
+    F((x < 1e+6? abs(sin(x+0.1)*sin(sqrt(30.)*x+0.1)) - 0.001: 1.), "s30")
+    #undef F
+  };
+  // Параллельное вычисление результатов (использует OpenMP).
+  static const int tasks = sizeof(task) / sizeof(Task);
+  #pragma omp parallel for
+  for (int i = 0; i < tasks; ++i)
+    test(task[i].f, task[i].result);
+
+  // Последовательный вывод результатов.
+  for (auto &t: task)
+  {
+    cout << t.name << ": ";
+    auto &r = t.result;
+    if (r.root_found)
+    {
+      cout << '[' << r.a << ", " << r.b << "], root = ";
+      cout << r.root << ", f(root) = " << r.f_root << '\n';
+    }
+    else
+    {
+      cout << "no roots found\n";
+    }
+  }
